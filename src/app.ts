@@ -4,8 +4,11 @@ export const app=express();app.disable('x-powered-by');app.set('trust proxy',env
   origin:(origin,callback)=>{
     if(!origin)return callback(null,true);
     const configured=env.FRONTEND_ORIGINS.split(',').map(x=>x.trim());
-    if(configured.includes(origin))return callback(null,true);
-    if(env.NODE_ENV==='development'&&/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)){
+    if(configured.includes(origin)||configured.includes('*'))return callback(null,true);
+    if(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)){
+      return callback(null,true);
+    }
+    if(/^https:\/\/.*\.onrender\.com$/.test(origin)||/^https:\/\/.*\.vercel\.app$/.test(origin)){
       return callback(null,true);
     }
     return callback(null,false);
