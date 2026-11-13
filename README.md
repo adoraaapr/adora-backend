@@ -1,11 +1,15 @@
 # Adora Backend API
 
-The production-ready backend REST API and background worker service for the **Adora** rider-based outdoor advertising platform. Built with Node.js, Express, TypeScript, Prisma ORM, MySQL 8.4, Redis 7, and BullMQ.
+The production-ready backend REST API and background worker service for the **Adora** rider-based outdoor advertising platform. Built with Node.js, Express, TypeScript, Prisma ORM, MongoDB Atlas (NoSQL), Redis 7, and BullMQ.
 
 ---
 
 ## Architecture & Features
 
+- **Database & NoSQL Persistence**:
+  - Hosted on **MongoDB Atlas** using Prisma's native MongoDB provider.
+  - Native document models with full indexing and transactional integrity.
+  - Automatic schema push and collection synchronization via `prisma db push`.
 - **Authentication & Authorization**:
   - Secure Argon2id password hashing.
   - Dual JWT authentication (short-lived access tokens + HttpOnly rotating refresh cookies).
@@ -30,7 +34,7 @@ The production-ready backend REST API and background worker service for the **Ad
 
 - **Runtime**: Node.js 20+ / TypeScript
 - **Framework**: Express 4
-- **Database & ORM**: MySQL 8.4 via Prisma ORM
+- **Database & ORM**: MongoDB Atlas via Prisma ORM
 - **Cache & Queue**: Redis 7 via ioredis & BullMQ
 - **Validation**: Zod
 - **Logging**: Pino & Pino-HTTP structured JSON logging
@@ -43,7 +47,7 @@ The production-ready backend REST API and background worker service for the **Ad
 
 ### 1. Prerequisites
 - Node.js 20+
-- MySQL 8.4
+- MongoDB Atlas cluster URI (`mongodb+srv://...`)
 - Redis 7
 
 ### 2. Environment Setup
@@ -51,23 +55,20 @@ Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Configure your database and Redis URLs:
+Configure your MongoDB Atlas connection string:
 ```env
 PORT=5000
-DATABASE_URL="mysql://adora:change-me@localhost:3306/adora"
+DATABASE_URL="mongodb+srv://<username>:<password>@cluster0.mongodb.net/adora?retryWrites=true&w=majority"
 REDIS_URL="redis://localhost:6379"
 ```
 
-### 3. Database Migration & Seeding
+### 3. Database Synchronization & Seeding
 ```bash
-# Generate Prisma Client
-npm run db:generate
-
-# Apply migrations
-npm run db:migrate
+# Push schema and create collections/indexes on MongoDB Atlas
+npm run db:push -w backend
 
 # Seed default advertising plans
-npm run db:seed
+npm run db:seed -w backend
 ```
 
 ### 4. Run Development Servers
@@ -76,7 +77,7 @@ npm run db:seed
 npm run dev
 
 # Run BullMQ background worker (separate terminal)
-npm run jobs
+npm run jobs -w backend
 ```
 
 API will be running on `http://localhost:5000`.  
@@ -84,8 +85,8 @@ Swagger documentation is available at `http://localhost:5000/api/v1/docs`.
 
 ### 5. Build for Production
 ```bash
-npm run build
-npm start
+npm run build -w backend
+npm start -w backend
 ```
 
 ---
@@ -94,7 +95,7 @@ npm start
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/v1/health/ready` | Dependency health check (MySQL + Redis) |
+| `GET` | `/api/v1/health/ready` | Dependency health check (MongoDB Atlas + Redis) |
 | `GET` | `/api/v1/docs` | Swagger OpenAPI interactive documentation |
 | `POST` | `/api/v1/auth/login` | User login (Admin & Rider) |
 | `POST` | `/api/v1/auth/riders/signup` | Rider registration |

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -53,13 +53,13 @@ enum PayoutStatus {
 }
 
 model User {
-  id               String         @id @default(cuid()) @db.VarChar(30)
+  id               String         @id @default(cuid()) @map("_id")
   role             Role
-  name             String         @db.VarChar(100)
-  phone            String         @unique @db.VarChar(20)
-  email            String?        @unique @db.VarChar(190)
-  passwordHash     String         @db.VarChar(255)
-  refreshTokenHash String?        @db.VarChar(255)
+  name             String
+  phone            String         @unique
+  email            String?        @unique
+  passwordHash     String
+  refreshTokenHash String?
   tokenVersion     Int            @default(0)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -74,25 +74,26 @@ model User {
 }
 
 model Rider {
-  userId    String      @id @db.VarChar(30)
-  vehicleNo String?     @db.VarChar(20)
-  city      String?     @db.VarChar(80)
-  upiId     String?     @db.VarChar(100)
+  id        String      @id @default(cuid()) @map("_id")
+  userId    String      @unique
+  vehicleNo String?
+  city      String?
+  upiId     String?
   status    RiderStatus @default(PENDING)
   deletedAt DateTime?
-  user      User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user      User        @relation(fields: [userId], references: [id])
 
   @@index([status, city])
 }
 
 model Customer {
-  id               String   @id @default(cuid()) @db.VarChar(30)
-  name             String   @db.VarChar(100)
-  phone            String   @db.VarChar(20)
-  email            String   @unique @db.VarChar(190)
-  company          String?  @db.VarChar(120)
-  passwordHash     String   @db.VarChar(255)
-  refreshTokenHash String?  @db.VarChar(255)
+  id               String   @id @default(cuid()) @map("_id")
+  name             String
+  phone            String
+  email            String   @unique
+  company          String?
+  passwordHash     String
+  refreshTokenHash String?
   tokenVersion     Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -103,9 +104,9 @@ model Customer {
 }
 
 model AdPlan {
-  id             String    @id @default(cuid()) @db.VarChar(30)
-  name           String    @db.VarChar(80)
-  description    String?   @db.Text
+  id             String    @id @default(cuid()) @map("_id")
+  name           String
+  description    String?
   durationDays   Int
   ridersCount    Int
   pricePaise     BigInt
@@ -121,20 +122,20 @@ model AdPlan {
 }
 
 model Order {
-  id                String      @id @default(cuid()) @db.VarChar(30)
-  customerId        String      @db.VarChar(30)
-  planId            String      @db.VarChar(30)
+  id                String      @id @default(cuid()) @map("_id")
+  customerId        String
+  planId            String
   amountPaise       BigInt
-  currency          String      @default("INR") @db.VarChar(3)
-  razorpayOrderId   String?     @unique @db.VarChar(80)
-  razorpayPaymentId String?     @unique @db.VarChar(80)
+  currency          String      @default("INR")
+  razorpayOrderId   String?     @unique
+  razorpayPaymentId String?     @unique
   status            OrderStatus @default(CREATED)
-  idempotencyKey    String?     @unique @db.VarChar(100)
-  failureReason     String?     @db.VarChar(255)
+  idempotencyKey    String?     @unique
+  failureReason     String?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
-  customer          Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  plan              AdPlan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  customer          Customer    @relation(fields: [customerId], references: [id])
+  plan              AdPlan      @relation(fields: [planId], references: [id])
   ad                Ad?
 
   @@index([customerId, createdAt])
@@ -142,22 +143,22 @@ model Order {
 }
 
 model Ad {
-  id               String         @id @default(cuid()) @db.VarChar(30)
-  customerId       String         @db.VarChar(30)
-  orderId          String         @unique @db.VarChar(30)
-  planId           String         @db.VarChar(30)
-  title            String?        @db.VarChar(150)
-  creativeUrl      String?        @db.VarChar(500)
-  creativePublicId String?        @db.VarChar(255)
+  id               String         @id @default(cuid()) @map("_id")
+  customerId       String
+  orderId          String         @unique
+  planId           String
+  title            String?
+  creativeUrl      String?
+  creativePublicId String?
   status           AdStatus       @default(PENDING_APPROVAL)
-  startDate        DateTime?      @db.Date
-  endDate          DateTime?      @db.Date
-  rejectionReason  String?        @db.VarChar(255)
+  startDate        DateTime?
+  endDate          DateTime?
+  rejectionReason  String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-  customer         Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  order            Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  plan             AdPlan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+  customer         Customer       @relation(fields: [customerId], references: [id])
+  order            Order          @relation(fields: [orderId], references: [id])
+  plan             AdPlan         @relation(fields: [planId], references: [id])
   assignments      AdAssignment[]
   logs             DailyLog[]
 
@@ -167,13 +168,13 @@ model Ad {
 }
 
 model AdAssignment {
-  id         String           @id @default(cuid()) @db.VarChar(30)
-  adId       String           @db.VarChar(30)
-  riderId    String           @db.VarChar(30)
+  id         String           @id @default(cuid()) @map("_id")
+  adId       String
+  riderId    String
   assignedAt DateTime         @default(now())
   status     AssignmentStatus @default(ACTIVE)
-  ad         Ad               @relation(fields: [adId], references: [id], onDelete: Restrict)
-  rider      User             @relation(fields: [riderId], references: [id], onDelete: Restrict)
+  ad         Ad               @relation(fields: [adId], references: [id])
+  rider      User             @relation(fields: [riderId], references: [id])
 
   @@unique([adId, riderId])
   @@index([riderId, status])
@@ -181,26 +182,26 @@ model AdAssignment {
 }
 
 model DailyLog {
-  id                 String    @id @default(cuid()) @db.VarChar(30)
-  riderId            String    @db.VarChar(30)
-  adId               String    @db.VarChar(30)
-  logDate            DateTime  @db.Date
-  startKm            Decimal   @db.Decimal(9, 1)
-  endKm              Decimal?  @db.Decimal(9, 1)
-  startPhotoUrl      String    @db.VarChar(500)
-  startPhotoPublicId String?   @db.VarChar(255)
-  endPhotoUrl        String?   @db.VarChar(500)
-  endPhotoPublicId   String?   @db.VarChar(255)
-  adPhotoUrl         String?   @db.VarChar(500)
-  adPhotoPublicId    String?   @db.VarChar(255)
+  id                 String    @id @default(cuid()) @map("_id")
+  riderId            String
+  adId               String
+  logDate            DateTime
+  startKm            Float
+  endKm              Float?
+  startPhotoUrl      String
+  startPhotoPublicId String?
+  endPhotoUrl        String?
+  endPhotoPublicId   String?
+  adPhotoUrl         String?
+  adPhotoPublicId    String?
   status             LogStatus @default(SUBMITTED)
-  adminNote          String?   @db.VarChar(255)
+  adminNote          String?
   suspicious         Boolean   @default(false)
-  suspiciousReason   String?   @db.VarChar(255)
+  suspiciousReason   String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
-  rider              User      @relation(fields: [riderId], references: [id], onDelete: Restrict)
-  ad                 Ad        @relation(fields: [adId], references: [id], onDelete: Restrict)
+  rider              User      @relation(fields: [riderId], references: [id])
+  ad                 Ad        @relation(fields: [adId], references: [id])
 
   @@unique([riderId, adId, logDate])
   @@index([status, logDate])
@@ -209,58 +210,58 @@ model DailyLog {
 }
 
 model Location {
-  id         BigInt   @id @default(autoincrement())
-  riderId    String   @db.VarChar(30)
-  lat        Decimal  @db.Decimal(9, 6)
-  lng        Decimal  @db.Decimal(9, 6)
+  id         String   @id @default(cuid()) @map("_id")
+  riderId    String
+  lat        Float
+  lng        Float
   recordedAt DateTime @default(now())
-  rider      User     @relation(fields: [riderId], references: [id], onDelete: Restrict)
+  rider      User     @relation(fields: [riderId], references: [id])
 
   @@index([riderId, recordedAt])
   @@index([recordedAt])
 }
 
 model Payout {
-  id             String       @id @default(cuid()) @db.VarChar(30)
-  riderId        String       @db.VarChar(30)
-  periodStart    DateTime     @db.Date
-  periodEnd      DateTime     @db.Date
-  totalKm        Decimal      @db.Decimal(10, 1)
+  id             String       @id @default(cuid()) @map("_id")
+  riderId        String
+  periodStart    DateTime
+  periodEnd      DateTime
+  totalKm        Float
   ratePerKmPaise Int
   amountPaise    BigInt
   status         PayoutStatus @default(PENDING)
   paidAt         DateTime?
-  reference      String?      @db.VarChar(100)
+  reference      String?
   createdAt      DateTime     @default(now())
-  rider          User         @relation(fields: [riderId], references: [id], onDelete: Restrict)
+  rider          User         @relation(fields: [riderId], references: [id])
 
   @@unique([riderId, periodStart, periodEnd])
   @@index([status, periodEnd])
 }
 
 model WebhookEvent {
-  id          String    @id @default(cuid()) @db.VarChar(30)
-  eventId     String    @unique @db.VarChar(100)
-  eventType   String    @db.VarChar(100)
+  id          String    @id @default(cuid()) @map("_id")
+  eventId     String    @unique
+  eventType   String
   payload     Json
   processedAt DateTime?
   attempts    Int       @default(0)
-  lastError   String?   @db.VarChar(500)
+  lastError   String?
   createdAt   DateTime  @default(now())
 
   @@index([processedAt, createdAt])
 }
 
 model AuditLog {
-  id         String   @id @default(cuid()) @db.VarChar(30)
-  actorId    String   @db.VarChar(30)
-  action     String   @db.VarChar(80)
-  entityType String   @db.VarChar(80)
-  entityId   String   @db.VarChar(50)
+  id         String   @id @default(cuid()) @map("_id")
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
   metadata   Json?
-  requestId  String?  @db.VarChar(100)
+  requestId  String?
   createdAt  DateTime @default(now())
-  actor      User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actor      User     @relation("AuditActor", fields: [actorId], references: [id])
 
   @@index([actorId, createdAt])
   @@index([entityType, entityId, createdAt])
