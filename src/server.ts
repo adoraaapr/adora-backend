@@ -37,7 +37,13 @@ async function shutdown(signal: string) {
 
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
-process.on('unhandledRejection', reason => {
-  logger.fatal({reason}, 'Unhandled rejection');
-  void shutdown('unhandledRejection');
+process.on('unhandledRejection', (reason: any) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error({ err, msg: err.message, stack: err.stack }, 'Unhandled rejection caught (non-fatal)');
+  console.error('[Process] Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (err: any) => {
+  logger.fatal({ err, msg: err.message, stack: err.stack }, 'Uncaught exception');
+  console.error('[Process] Uncaught exception:', err);
+  void shutdown('uncaughtException');
 });

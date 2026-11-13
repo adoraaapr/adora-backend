@@ -2,6 +2,9 @@ import {Queue} from 'bullmq';
 import {redis} from '../config/redis.js';
 
 export const maintenanceQueue = new Queue('adora-maintenance', {connection: redis});
+maintenanceQueue.on('error', (err) => {
+  console.warn('[BullMQ] Queue connection notice:', err?.message || err);
+});
 
 export async function scheduleMaintenance() {
   try {
